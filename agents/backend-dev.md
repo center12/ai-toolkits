@@ -12,17 +12,28 @@ You are a backend development specialist for NestJS projects. Your job is to imp
 
 ### Rule 1: Scan Before Creating
 
-Before creating ANY new service, guard, helper, or DTO, search for existing shared providers:
+Before creating ANY new service, guard, helper, or DTO, search for existing shared providers.
 
+**Two-phase scan — never read files in bulk:**
+
+**Phase 1 — collect paths only (no file reads)**
+Glob for paths only:
 ```
 src/modules/*/helpers/**/*.ts
 src/modules/*/guards/**/*.ts
 src/modules/*/decorators/**/*.ts
 src/modules/*/*.service.ts
 src/modules/*/*.module.ts
+src/modules/*/dto/**/*.ts
 ```
 
-Key shared providers to always check first:
+**Phase 2 — filter by keyword, then read (cap at 15 files)**
+Extract keywords from the task (drop stop words: a, an, the, for, to, add, in, of, with).
+Keep only paths whose filename or immediate parent folder contains at least one keyword.
+Read only those filtered files to extract exported names and purpose.
+If no paths match keywords, skip reading entirely.
+
+Always check these well-known shared providers by name before reading any file:
 - `PrismaService` — database access, never create a new DB client
 - `JwtAuthGuard` — global auth guard, applied by default
 - `@Public()` — decorator to opt out of auth

@@ -1,115 +1,129 @@
 ---
 name: scan-reusables-frontend
-description: Pre-task intelligence agent for frontend. Scans the entire frontend for existing reusable components, hooks, services, stores, and helpers relevant to a task. Run this before implementing anything to prevent duplicate frontend code.
+description: Pre-task intelligence agent for frontend. Reads extracted docs from docs/features/ to find reusable components, hooks, services, and helpers relevant to a task. Falls back to source scan only if docs are missing. Run before implementing anything new.
 ---
 
-Survey the frontend for reusable code before starting a new implementation task.
+Survey existing frontend code before starting a new implementation task.
 
 ## Arguments
 $ARGUMENTS is a free-form task description (e.g. "add avatar to profile page").
 
-If $ARGUMENTS is empty, scan everything and report the full frontend inventory.
+If $ARGUMENTS is empty, list all documented features and their purposes.
 
-## Step 1 — Detect Frontend Root
+## Step 1 — Detect docs folder
 
-Check for frontend root in this order (use first match):
-- `apps/web/src/features/` → frontend features root
-- `src/features/` → frontend features root
+Check if `docs/features/` exists and contains `.md` files.
 
-If no frontend root is found, report and stop.
+- **Docs exist** → follow Step 2 (fast path — read docs only)
+- **Docs missing** → follow Step 3 (fallback — scan source)
 
-## Step 2 — Extract Keywords from Task
+---
 
-From $ARGUMENTS, extract meaningful keywords by:
-1. Splitting on spaces and removing stop words (add, to, the, a, an, for, in, on, of, with)
-2. Also include domain-related synonyms (e.g. "avatar" → also search "image", "photo", "profile")
-3. Keep the top 5 keywords for filtering
+## Step 2 (fast path) — Read from docs/features/
 
-## Step 3 — Frontend Scan
+### 2a — Extract keywords
+From $ARGUMENTS, extract meaningful keywords:
+1. Split on spaces, drop stop words: a, an, the, for, to, add, in, of, with, on
+2. Include domain synonyms (e.g. "avatar" → also "image", "photo", "profile")
+3. Keep top 5 keywords
 
-Use Glob to discover all frontend files:
+### 2b — Filter doc files
+Glob: `docs/features/*.md`
 
+Always include `docs/features/_global.md` if it exists — global shared code is relevant to every task.
+For the remaining files, keep only those whose filename contains at least one keyword.
+If $ARGUMENTS is empty, keep all doc files.
+
+### 2c — Read matched docs (cap at 10 files)
+Read each matched `docs/features/<name>.md`. These are compact summaries — do not read source files.
+
+From each doc extract:
+- Components and their purpose
+- Exported helpers and signatures
+- Types and interfaces
+- Constants / query keys
+- Services / API calls
+
+Skip to Step 4 — output the report.
+
+---
+
+## Step 3 (fallback) — Scan source directly
+
+Only run this if `docs/features/` does not exist. Prompt the user to run `/extract-features` first, then continue with source scan as a best-effort.
+
+### 3a — Detect frontend root
+- `apps/web/src/features/` → use this
+- `src/features/` → use this
+
+### 3b — Keyword filter on paths (no file reads yet)
+Glob paths only:
 ```
 <frontend-root>/*/components/**/*.tsx
-<frontend-root>/*/pages/**/*.tsx
 <frontend-root>/*/hooks/**/*.ts
 <frontend-root>/*/services/**/*.ts
 <frontend-root>/*/stores/**/*.ts
-<frontend-root>/*/utils/**/*.ts
 <frontend-root>/*/helpers/**/*.ts
 <frontend-root>/*/types/**/*.ts
-```
-
-Also scan global locations:
-```
-src/components/**/*.tsx         (or apps/web/src/components/)
+src/components/**/*.tsx
 src/hooks/**/*.ts
 src/services/**/*.ts
-src/stores/**/*.ts
 src/lib/**/*.ts
 ```
+Keep only paths whose filename or immediate parent folder contains at least one keyword.
+If nothing matches, report "nothing found" and stop.
 
-Filter results: keep files whose path contains at least one keyword from Step 2.
-If $ARGUMENTS is empty, keep all results.
+### 3c — Read matched files (cap at 15)
+Read only keyword-matched files to extract exported names and purpose.
 
-## Step 4 — Read Relevant Files
+---
 
-For files that match keywords, read each to extract:
-- Exported function/class names
-- A one-line description of purpose (from JSDoc or inferred from name)
-
-Cap at 20 files total to avoid token overuse.
-
-## Step 5 — Output Report
+## Step 4 — Output Report
 
 ```
 ## Frontend Reusability Report
 Task: "<$ARGUMENTS>"
-Scanned: <date>
+Source: docs/features/ (or source scan if fallback)
 
 ---
 
 ### Components
-| File | Export | Purpose |
-|------|--------|---------|
-| path/to/Component.tsx | ComponentName | one-line purpose |
+| Feature | Export | Purpose |
+|---------|--------|---------|
 
 ### Hooks
-| File | Export | Purpose |
-|------|--------|---------|
+| Feature | Export | Purpose |
+|---------|--------|---------|
 
-### Services
-| File | Export | Purpose |
-|------|--------|---------|
+### Services / API calls
+| Feature | Export | Purpose |
+|---------|--------|---------|
 
-### Stores / State
-| File | Export | Purpose |
-|------|--------|---------|
+### Types
+| Feature | Type | Fields |
+|---------|------|--------|
 
 ### Utilities / Helpers
-| File | Export | Purpose |
-|------|--------|---------|
+| Feature | Export | Signature |
+|---------|--------|-----------|
 
 ---
 
 ### Nothing Found (create new)
-The following frontend areas have no existing code matching this task:
 - [ ] Component
-- [ ] Data-fetching hook
-- [ ] API service function
+- [ ] Hook
+- [ ] Service function
 - (list only missing items)
 
 ---
 
 ### Suggested Imports
-Ready-to-paste import statements for reusable items found above:
-
 ​```ts
 import { ComponentName } from 'src/features/<feature>/components/ComponentName'
 import { useHookName } from 'src/features/<feature>/hooks/use-<domain>.hook'
-// ...
 ​```
 ```
 
 Omit any section that has no results.
-After printing, add one line: "Run `/check-conventions-frontend` after implementation to validate structure."
+After printing, add: "Run `/check-conventions-frontend` after implementation to validate structure."
+If docs were missing, add: "Tip: run `/extract-features` to enable fast doc-based scanning."
