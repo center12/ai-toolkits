@@ -119,31 +119,65 @@ export class UserService {
 | `this.logger.log()` | Successful operations (created, updated, deleted) |
 | `this.logger.debug()` | Entry into a method, input params for tracing |
 | `this.logger.warn()` | Expected but notable conditions (not found, skipped) |
-| `this.logger.error()` | Caught exceptions and unexpected failures |
+| `this.logger.error()` | In `catch`: unexpected failures, with **method name** in the message |
+
+### Try / catch in services
+
+- Wrap each public service method body in **`try` / `catch`** so failures surface with a consistent log.
+- In **`catch`**, call `this.logger.error(message, stackOrErr)` where **`message` starts with the method name** (e.g. `findAll: unexpected error`, `update: error id=${id}`) so logs show which function failed. Pass `err instanceof Error ? err.stack : err` as the second argument when available.
+- **Always rethrow** after logging (`throw err`) unless you are transforming the error on purpose.
+- If the method throws **`HttpException`** on expected paths (e.g. `NotFoundException`), in `catch` do **`if (err instanceof HttpException) throw err`** before the `error` log so expected HTTP errors are not logged twice at `error` level (404 stays `warn` + throw only).
 
 ### Pattern
 
 ```ts
-async create(dto: CreateUserDto) {
-  this.logger.debug(`create: called with dto=${JSON.stringify(dto)}`)
+import { HttpException, Logger, NotFoundException } from '@nestjs/common'
+
+async findAll() {
+  this.logger.debug('findAll: called')
   try {
-    const user = await this.prisma.user.create({ data: dto })
-    this.logger.log(`create: user created id=${user.id}`)
-    return user
+    return await this.prisma.user.findMany()
   } catch (err) {
-    this.logger.error(`create: failed`, err instanceof Error ? err.stack : err)
+    this.logger.error(
+      'findAll: unexpected error',
+      err instanceof Error ? err.stack : err,
+    )
     throw err
   }
 }
 
 async findOne(id: string) {
   this.logger.debug(`findOne: id=${id}`)
-  const user = await this.prisma.user.findUnique({ where: { id } })
-  if (!user) {
-    this.logger.warn(`findOne: not found id=${id}`)
-    throw new NotFoundException(`User ${id} not found`)
+  try {
+    const user = await this.prisma.user.findUnique({ where: { id } })
+    if (!user) {
+      this.logger.warn(`findOne: not found id=${id}`)
+      throw new NotFoundException(`User ${id} not found`)
+    }
+    return user
+  } catch (err) {
+    if (err instanceof HttpException) throw err
+    this.logger.error(
+      `findOne: unexpected error id=${id}`,
+      err instanceof Error ? err.stack : err,
+    )
+    throw err
   }
-  return user
+}
+
+async create(dto: CreateUserDto) {
+  this.logger.debug('create: called')
+  try {
+    const user = await this.prisma.user.create({ data: dto })
+    this.logger.log(`create: user created id=${user.id}`)
+    return user
+  } catch (err) {
+    this.logger.error(
+      'create: error',
+      err instanceof Error ? err.stack : err,
+    )
+    throw err
+  }
 }
 ```
 
@@ -151,7 +185,8 @@ async findOne(id: string) {
 - Every service must declare `private readonly logger = new Logger(ClassName.name)`
 - Log method entry at `debug` level with key input params
 - Log successful mutations at `log` level with the resulting ID
-- Log all caught errors at `error` level with the stack trace
+- Use **`try` / `catch`** on service methods; on unexpected errors log at `error` with **method name** (and ids/context) in the message, then rethrow
+- For expected **`HttpException`** flows inside `try`, rethrow from `catch` without an extra `error` log
 - Do not log sensitive data (passwords, tokens, PII)
 - Controllers do not log — delegate to the service layer
 
@@ -175,4 +210,4 @@ async findOne(id: string) {
 - [ ] Placed files in correct subdirectory (`dto/`, `constants/`, `helpers/`)
 - [ ] Registered module in `app.module.ts` (for new modules)
 - [ ] Added `private readonly logger = new Logger(ClassName.name)` to every service
-- [ ] Logged method entry (`debug`), success (`log`), not-found (`warn`), and errors (`error`)
+- [ ] Logged method entry (`debug`), success (`log`), not-found (`warn`), and wrapped methods in `try`/`catch` with `error` logs that name the failing method

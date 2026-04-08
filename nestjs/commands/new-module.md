@@ -52,8 +52,16 @@ export class $PascalNameModule {}
 ```
 
 ### Content for `$ARGUMENTS.service.ts`
+
+**Logging / errors:** Every service method wraps its logic in `try`/`catch`. In `catch`, call `logger.error` with the **method name** first in the message (e.g. `findAll: unexpected error`) plus useful context (ids, keys), and pass the stack or serialized error as the second argument. Always `throw` after logging so Nest can respond. For methods that throw `HttpException` on expected paths (e.g. `NotFoundException`), rethrow `HttpException` without an extra `error` log so you do not double-log expected HTTP errors.
+
 ```ts
-import { Injectable, Logger, NotFoundException } from '@nestjs/common'
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  HttpException,
+} from '@nestjs/common'
 import { PrismaService } from '../../prisma/prisma.service'
 import { Create$PascalNameDto } from './dto/create-$ARGUMENTS.dto'
 import { Update$PascalNameDto } from './dto/update-$ARGUMENTS.dto'
@@ -66,19 +74,36 @@ export class $PascalNameService {
 
   async findAll() {
     this.logger.debug('findAll: called')
-    // TODO: implement
-    return []
+    try {
+      // TODO: implement
+      return []
+    } catch (err) {
+      this.logger.error(
+        'findAll: unexpected error',
+        err instanceof Error ? err.stack : err,
+      )
+      throw err
+    }
   }
 
   async findOne(id: string) {
     this.logger.debug(`findOne: id=${id}`)
-    // TODO: implement
-    const item = null
-    if (!item) {
-      this.logger.warn(`findOne: not found id=${id}`)
-      throw new NotFoundException(`$PascalName ${id} not found`)
+    try {
+      // TODO: implement
+      const item = null
+      if (!item) {
+        this.logger.warn(`findOne: not found id=${id}`)
+        throw new NotFoundException(`$PascalName ${id} not found`)
+      }
+      return item
+    } catch (err) {
+      if (err instanceof HttpException) throw err
+      this.logger.error(
+        `findOne: unexpected error id=${id}`,
+        err instanceof Error ? err.stack : err,
+      )
+      throw err
     }
-    return item
   }
 
   async create(dto: Create$PascalNameDto) {
@@ -87,7 +112,10 @@ export class $PascalNameService {
       // TODO: implement
       this.logger.log(`create: success`)
     } catch (err) {
-      this.logger.error(`create: failed`, err instanceof Error ? err.stack : err)
+      this.logger.error(
+        'create: error',
+        err instanceof Error ? err.stack : err,
+      )
       throw err
     }
   }
@@ -98,7 +126,10 @@ export class $PascalNameService {
       // TODO: implement
       this.logger.log(`update: success id=${id}`)
     } catch (err) {
-      this.logger.error(`update: failed id=${id}`, err instanceof Error ? err.stack : err)
+      this.logger.error(
+        `update: error id=${id}`,
+        err instanceof Error ? err.stack : err,
+      )
       throw err
     }
   }
@@ -109,7 +140,10 @@ export class $PascalNameService {
       // TODO: implement
       this.logger.log(`remove: success id=${id}`)
     } catch (err) {
-      this.logger.error(`remove: failed id=${id}`, err instanceof Error ? err.stack : err)
+      this.logger.error(
+        `remove: error id=${id}`,
+        err instanceof Error ? err.stack : err,
+      )
       throw err
     }
   }
