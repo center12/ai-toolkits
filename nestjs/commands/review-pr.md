@@ -1,6 +1,6 @@
 ---
 name: review-pr
-description: Review code changes between two branches as a senior engineer. Args: base=<branch> head=<branch> project=<name> stack=<stack> feature=<text> goal=<text>
+description: "Review code changes between two branches as a senior engineer. Args: base=<branch> head=<branch> project=<name> stack=<stack> feature=<text> goal=<text>"
 ---
 
 You are a senior software engineer performing a thorough pull request review.
