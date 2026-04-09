@@ -88,13 +88,38 @@ When creating a new module:
 ## Rule 5: DTO Patterns
 
 - Use `class-validator` decorators (`@IsString()`, `@IsNotEmpty()`, etc.)
-- Update DTOs extend create DTOs via `PartialType(CreateXxxDto)`
-- Use `@ApiProperty()` if Swagger is configured
+- Update DTOs extend create DTOs via `PartialType` from **`@nestjs/swagger`** (not `@nestjs/mapped-types`)
+- Every required field: `@ApiProperty({ description: '...', example: '...' })`
+- Every optional field: `@ApiPropertyOptional({ description: '...' })`
 - Keep DTOs flat — no nested logic
+
+## Rule 6: Swagger / OpenAPI
+
+Uses `@nestjs/swagger`. Enforce on every controller and DTO:
+
+**Controller class:**
+```ts
+@ApiTags('ModuleName')
+@ApiBearerAuth()           // omit only if the controller is @Public()
+@Controller('module-name')
+```
+
+**Controller methods:**
+```ts
+@ApiOperation({ summary: 'List all items' })
+@ApiResponse({ status: 200, description: 'Returns all items' })
+// For methods that can return 404:
+@ApiNotFoundResponse({ description: 'Item not found' })
+```
+
+**Imports:**
+```ts
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiNotFoundResponse, ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+```
 
 ---
 
-## Rule 6: Logging
+## Rule 7: Logging
 
 Use NestJS `Logger` for structured, debuggable logs — never `console.log`.
 
@@ -192,7 +217,7 @@ async create(dto: CreateUserDto) {
 
 ---
 
-## Rule 7: Auth Conventions
+## Rule 8: Auth Conventions
 
 - `JwtAuthGuard` is applied **globally** — all routes are protected by default
 - Use `@Public()` decorator to opt a route out of auth
@@ -208,6 +233,10 @@ async create(dto: CreateUserDto) {
 - [ ] Confirmed nothing reusable exists before creating a new file
 - [ ] Used correct kebab-case file naming
 - [ ] Placed files in correct subdirectory (`dto/`, `constants/`, `helpers/`)
+- [ ] Every DTO field has `@ApiProperty` or `@ApiPropertyOptional`
+- [ ] Update DTO uses `PartialType` from `@nestjs/swagger`
+- [ ] Controller class has `@ApiTags(...)` and `@ApiBearerAuth()`
+- [ ] Every controller method has `@ApiOperation` + `@ApiResponse`/`@ApiNotFoundResponse`
 - [ ] Registered module in `app.module.ts` (for new modules)
 - [ ] Added `private readonly logger = new Logger(ClassName.name)` to every service
 - [ ] Logged method entry (`debug`), success (`log`), not-found (`warn`), and wrapped methods in `try`/`catch` with `error` logs that name the failing method

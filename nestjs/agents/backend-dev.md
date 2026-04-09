@@ -92,13 +92,17 @@ After creating a new module:
 ```ts
 // create-<name>.dto.ts
 import { IsString, IsNotEmpty, IsOptional } from 'class-validator'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 export class CreateModuleNameDto {
+  @ApiProperty({ description: 'Name of the item', example: 'My item' })
   @IsString() @IsNotEmpty() name: string
+
+  @ApiPropertyOptional({ description: 'Optional description' })
   @IsString() @IsOptional() description?: string
 }
 
-// update-<name>.dto.ts
-import { PartialType } from '@nestjs/mapped-types'
+// update-<name>.dto.ts — use @nestjs/swagger PartialType so Swagger shows fields as optional
+import { PartialType } from '@nestjs/swagger'
 import { CreateModuleNameDto } from './create-module-name.dto'
 export class UpdateModuleNameDto extends PartialType(CreateModuleNameDto) {}
 ```
@@ -125,7 +129,45 @@ export class ModuleNameService {
 }
 ```
 
-### Rule 7: Auth Conventions
+### Rule 7: Swagger / OpenAPI
+
+Use `@nestjs/swagger` decorators on every controller and DTO.
+
+**Controller:**
+```ts
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiNotFoundResponse } from '@nestjs/swagger'
+
+@ApiTags('ModuleName')
+@ApiBearerAuth()
+@Controller('module-name')
+export class ModuleNameController {
+  @Get()
+  @ApiOperation({ summary: 'List all ModuleName items' })
+  @ApiResponse({ status: 200, description: 'Returns all items' })
+  findAll() { ... }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get one ModuleName item by ID' })
+  @ApiResponse({ status: 200, description: 'Returns the item' })
+  @ApiNotFoundResponse({ description: 'ModuleName not found' })
+  findOne(@Param('id') id: string) { ... }
+
+  @Post()
+  @ApiOperation({ summary: 'Create a new ModuleName item' })
+  @ApiResponse({ status: 201, description: 'Item created' })
+  create(@Body() dto: CreateModuleNameDto) { ... }
+}
+```
+
+**Rules:**
+- `@ApiTags('ModuleName')` on every controller class
+- `@ApiBearerAuth()` on every protected controller class
+- `@ApiOperation({ summary: '...' })` on every method
+- `@ApiResponse` + `@ApiNotFoundResponse` on every method as applicable
+- `@ApiProperty` on every required DTO field; `@ApiPropertyOptional` on optional fields
+- Update DTOs: use `PartialType` from `@nestjs/swagger` (not `@nestjs/mapped-types`)
+
+### Rule 8: Auth Conventions
 
 - `JwtAuthGuard` is applied globally — all endpoints are protected by default
 - Use `@Public()` decorator to expose an endpoint without auth
@@ -187,7 +229,10 @@ Files in `helpers/` must be pure functions only:
 - [ ] Scanned for existing shared providers (PrismaService, guards, etc.)
 - [ ] File is in the correct folder with correct kebab-case name
 - [ ] Class names are PascalCase
-- [ ] DTOs use class-validator decorators and PartialType for Update
+- [ ] DTOs use class-validator decorators and `PartialType` from `@nestjs/swagger` for Update
+- [ ] Every DTO field has `@ApiProperty` or `@ApiPropertyOptional`
+- [ ] Controller class has `@ApiTags(...)` and `@ApiBearerAuth()` (if protected)
+- [ ] Every controller method has `@ApiOperation({ summary: '...' })` and `@ApiResponse`/`@ApiNotFoundResponse`
 - [ ] Module registers PrismaService in providers
 - [ ] app.module.ts registration step noted in summary
 - [ ] Helpers are pure functions with no side effects

@@ -104,16 +104,31 @@ export class ModuleNameService {
 ```ts
 // create-<name>.dto.ts
 import { IsString, IsNotEmpty, IsOptional } from 'class-validator'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 export class CreateModuleNameDto {
+  @ApiProperty({ description: 'Name of the item', example: 'My item' })
   @IsString() @IsNotEmpty() name: string
+
+  @ApiPropertyOptional({ description: 'Optional description' })
   @IsString() @IsOptional() description?: string
 }
 
-// update-<name>.dto.ts
-import { PartialType } from '@nestjs/mapped-types'
+// update-<name>.dto.ts — use @nestjs/swagger PartialType (not @nestjs/mapped-types)
+// so Swagger correctly shows all fields as optional
+import { PartialType } from '@nestjs/swagger'
 import { CreateModuleNameDto } from './create-module-name.dto'
 export class UpdateModuleNameDto extends PartialType(CreateModuleNameDto) {}
 ```
+
+### Swagger / OpenAPI
+Uses `@nestjs/swagger`. Always include on every controller and DTO:
+- `@ApiTags('ModuleName')` on the controller class
+- `@ApiBearerAuth()` on the controller class (if JWT protected)
+- `@ApiOperation({ summary: '...' })` on every method
+- `@ApiResponse({ status: ... })` and `@ApiNotFoundResponse()` on every method
+- `@ApiProperty({ description: '...', example: '...' })` on every DTO field
+- `@ApiPropertyOptional(...)` on optional DTO fields
+- Use `PartialType` from `@nestjs/swagger` (not `@nestjs/mapped-types`) in Update DTOs
 
 ### Auth Conventions
 - `JwtAuthGuard` is applied globally — all endpoints protected by default

@@ -153,35 +153,51 @@ export class $PascalNameService {
 ### Content for `$ARGUMENTS.controller.ts`
 ```ts
 import { Controller, Get, Post, Put, Delete, Param, Body } from '@nestjs/common'
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiNotFoundResponse } from '@nestjs/swagger'
 import { $PascalNameService } from './$ARGUMENTS.service'
 import { Create$PascalNameDto } from './dto/create-$ARGUMENTS.dto'
 import { Update$PascalNameDto } from './dto/update-$ARGUMENTS.dto'
 
+@ApiTags('$PascalName')
+@ApiBearerAuth()
 @Controller('$ARGUMENTS')
 export class $PascalNameController {
   constructor(private readonly $camelNameService: $PascalNameService) {}
 
   @Get()
+  @ApiOperation({ summary: 'List all $PascalName items' })
+  @ApiResponse({ status: 200, description: 'Returns all items' })
   findAll() {
     return this.$camelNameService.findAll()
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get one $PascalName item by ID' })
+  @ApiResponse({ status: 200, description: 'Returns the item' })
+  @ApiNotFoundResponse({ description: '$PascalName not found' })
   findOne(@Param('id') id: string) {
     return this.$camelNameService.findOne(id)
   }
 
   @Post()
+  @ApiOperation({ summary: 'Create a new $PascalName item' })
+  @ApiResponse({ status: 201, description: 'Item created' })
   create(@Body() dto: Create$PascalNameDto) {
     return this.$camelNameService.create(dto)
   }
 
   @Put(':id')
+  @ApiOperation({ summary: 'Update a $PascalName item' })
+  @ApiResponse({ status: 200, description: 'Item updated' })
+  @ApiNotFoundResponse({ description: '$PascalName not found' })
   update(@Param('id') id: string, @Body() dto: Update$PascalNameDto) {
     return this.$camelNameService.update(id, dto)
   }
 
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete a $PascalName item' })
+  @ApiResponse({ status: 204, description: 'Item deleted' })
+  @ApiNotFoundResponse({ description: '$PascalName not found' })
   remove(@Param('id') id: string) {
     return this.$camelNameService.remove(id)
   }
@@ -192,8 +208,10 @@ export class $PascalNameController {
 ### Content for `dto/create-$ARGUMENTS.dto.ts`
 ```ts
 import { IsString, IsNotEmpty } from 'class-validator'
+import { ApiProperty } from '@nestjs/swagger'
 
 export class Create$PascalNameDto {
+  @ApiProperty({ description: 'Name of the item', example: 'My item' })
   @IsString()
   @IsNotEmpty()
   // TODO: add fields
@@ -202,7 +220,9 @@ export class Create$PascalNameDto {
 
 ### Content for `dto/update-$ARGUMENTS.dto.ts`
 ```ts
-import { PartialType } from '@nestjs/mapped-types'
+// Use PartialType from @nestjs/swagger (not @nestjs/mapped-types)
+// so all fields are shown as optional in the Swagger UI
+import { PartialType } from '@nestjs/swagger'
 import { Create$PascalNameDto } from './create-$ARGUMENTS.dto'
 
 export class Update$PascalNameDto extends PartialType(Create$PascalNameDto) {}

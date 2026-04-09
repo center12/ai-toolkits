@@ -8,8 +8,20 @@ A reusable collection of Claude Code skills, agents, commands, and templates org
 |--------|-------|-------------|
 | [`vite-react/`](vite-react/) | Vite + React | Working on a React frontend |
 | [`nestjs/`](nestjs/) | NestJS | Working on a NestJS backend |
+| [`python/`](python/) | Python / FastAPI | Working on a Python backend |
+| [`dotnet/`](dotnet/) | .NET / ASP.NET Core | Working on a .NET backend |
 
-Install one or both depending on your project.
+Install one or more depending on your project.
+
+---
+
+## Plugins
+
+Reusable TypeScript utilities — copy directly into your project as needed.
+
+| Plugin | Purpose |
+|--------|---------|
+| [`plugins/logger/`](plugins/logger/) | Leveled logger (`debug`/`log`/`info`/`warn`/`error`) with timestamp prefix and process context (main/render). Controlled via `ENABLE_LOG` env var. |
 
 ---
 
@@ -35,6 +47,24 @@ cp -r nestjs/skills/* ~/.claude/skills/
 cp nestjs/commands/*.md .claude/commands/
 ```
 
+### Python Backend
+
+```bash
+mkdir -p .claude/agents .claude/commands
+cp python/agents/*.md .claude/agents/
+cp -r python/skills/* ~/.claude/skills/
+cp python/commands/*.md .claude/commands/
+```
+
+### .NET Backend
+
+```bash
+mkdir -p .claude/agents .claude/commands
+cp dotnet/agents/*.md .claude/agents/
+cp -r dotnet/skills/* ~/.claude/skills/
+cp dotnet/commands/*.md .claude/commands/
+```
+
 ### Both (Fullstack)
 
 ```bash
@@ -56,6 +86,8 @@ Skills are auto-triggered behaviors that guide Claude before creating new files.
 |-------|-------|-----------------|
 | `frontend-feature` | Vite/React | Creating components, pages, hooks, services, stores |
 | `backend-module` | NestJS | Creating modules, services, controllers, DTOs, guards |
+| `backend-module` | Python | Creating modules, services, routers, schemas, helpers |
+| `backend-module` | .NET | Creating modules, services, controllers, DTOs, helpers |
 
 ### Agents
 
@@ -65,6 +97,8 @@ Agents are sub-agents invoked by skills to enforce project conventions.
 |-------|-------|---------|
 | `frontend-dev` | Vite/React | Enforce feature folder structure and naming |
 | `backend-dev` | NestJS | Enforce NestJS module structure and naming |
+| `backend-dev` | Python | Enforce Python module structure and naming |
+| `backend-dev` | .NET | Enforce .NET module structure and naming |
 
 ### Commands
 
@@ -99,6 +133,24 @@ Slash commands available in Claude Code sessions.
 | `/scan-reusables-backend` | `/scan-reusables-backend <task>` | Scan for reusable services, guards, DTOs |
 | `/check-conventions-backend` | `/check-conventions-backend [path]` | Validate folder structure and naming |
 
+**Python**
+
+| Command | Usage | Purpose |
+|---------|-------|---------|
+| `/new-module` | `/new-module <name>` | Scaffold a new Python module |
+| `/extract-modules` | `/extract-modules [name]` | Extract module docs to `docs/modules/` |
+| `/scan-reusables-backend` | `/scan-reusables-backend <task>` | Scan for reusable services, schemas, helpers |
+| `/check-conventions-backend` | `/check-conventions-backend [path]` | Validate folder structure and naming |
+
+**.NET**
+
+| Command | Usage | Purpose |
+|---------|-------|---------|
+| `/new-module` | `/new-module <Name>` | Scaffold a new .NET module |
+| `/extract-modules` | `/extract-modules [Name]` | Extract module docs to `docs/modules/` |
+| `/scan-reusables-backend` | `/scan-reusables-backend <task>` | Scan for reusable services, interfaces, DTOs |
+| `/check-conventions-backend` | `/check-conventions-backend [path]` | Validate folder structure and naming |
+
 ---
 
 ## Scripts
@@ -126,3 +178,6 @@ Output is saved to `output/pr-review.md`. Open that file in Claude Code and run 
 
 - [vite-react/CLAUDE.md](vite-react/CLAUDE.md) — folder structure, naming conventions, key patterns
 - [nestjs/CLAUDE.md](nestjs/CLAUDE.md) — module structure, naming conventions, key patterns
+- [python/CLAUDE.md](python/CLAUDE.md) — module structure, naming conventions, Swagger, key patterns
+- [dotnet/CLAUDE.md](dotnet/CLAUDE.md) — module structure, naming conventions, Swagger, key patterns
+- [plugins/](plugins/) — standalone TypeScript utilities (copy as needed)
