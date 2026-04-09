@@ -34,6 +34,7 @@ cp nestjs/commands/*.md .claude/commands/
 | `/cross-analysis` | `/cross-analysis` | Frontend ↔ backend cross-layer analysis |
 | `/sync-docs` | `/sync-docs [--cron <interval>]` | Sync docs or schedule automatic extraction |
 | `/final-report` | `/final-report` | Generate a final implementation report |
+| `/review-pr` | `/review-pr base=<branch> head=<branch>` | Review code changes between two branches |
 
 ---
 
