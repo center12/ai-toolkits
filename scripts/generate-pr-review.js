@@ -12,6 +12,7 @@ const OUTPUT_FILE = "output/pr-review.md";
 // limits to reduce token usage
 const MAX_FILES = 50;
 const MAX_LINES_PER_FILE = 500;
+const MAX_FILES_PER_CHUNK = 10; // split into multiple part files when exceeded
 const IGNORE_SUFFIXES = [
   "package-lock.json",
   "yarn.lock",
@@ -83,13 +84,32 @@ function getDiffForFile(file) {
   }
 }
 
-function generatePrompt(filesWithDiff, diffStat) {
-  return `# PR Review
+function generateFilesSection(filesWithDiff) {
+  return filesWithDiff
+    .map(
+      ({ file, diff }) => `
+### ${file}
+
+\`\`\`diff
+${diff}
+\`\`\`
+`
+    )
+    .join("\n");
+}
+
+function generatePrompt(filesWithDiff, diffStat, partInfo = null) {
+  const totalFiles = partInfo ? partInfo.totalFiles : filesWithDiff.length;
+  const partHeader = partInfo
+    ? `Part ${partInfo.part} of ${partInfo.total} — files ${partInfo.from}–${partInfo.to} of ${totalFiles}`
+    : null;
+
+  const contextSection = `# PR Review${partHeader ? ` (${partHeader})` : ""}
 
 ## Context
 - Base branch: ${BASE_BRANCH}
 - Target branch: ${TARGET_BRANCH}
-- Files changed: ${filesWithDiff.length}
+- Files changed: ${totalFiles}${partHeader ? `\n- This part: files ${partInfo.from}–${partInfo.to}` : ""}
 
 ### Diff Stat
 
@@ -112,25 +132,17 @@ Review scope:
 - Consistency with existing patterns
 - Test coverage
 
----
+---`;
 
-## Changed Files
+  const filesSection = `## Changed Files
 
-${filesWithDiff
-  .map(
-    ({ file, diff }) => `
-### ${file}
+${generateFilesSection(filesWithDiff)}
 
-\`\`\`diff
-${diff}
-\`\`\`
-`
-  )
-  .join("\n")}
+---`;
 
----
-
-## Output Format
+  const isLastPart = !partInfo || partInfo.part === partInfo.total;
+  const outputFormat = isLastPart
+    ? `## Output Format
 
 ### 1. Summary
 
@@ -161,7 +173,10 @@ What this PR does and its overall assessment.
 ### 7. Final Recommendation
 
 **Approve** / **Request Changes** / **Comment Only**
-`;
+`
+    : `> Continue reading the next part before writing your review.\n`;
+
+  return [contextSection, filesSection, outputFormat].join("\n");
 }
 
 // ===== EXECUTION =====
@@ -186,14 +201,36 @@ function main() {
     diff: getDiffForFile(file),
   }));
 
-  const content = generatePrompt(filesWithDiff, diffStat);
-
   // ensure output dir exists
   fs.mkdirSync(path.dirname(OUTPUT_FILE), { recursive: true });
 
-  fs.writeFileSync(OUTPUT_FILE, content);
+  const chunks = [];
+  for (let i = 0; i < filesWithDiff.length; i += MAX_FILES_PER_CHUNK) {
+    chunks.push(filesWithDiff.slice(i, i + MAX_FILES_PER_CHUNK));
+  }
 
-  console.log(`✅ PR review file saved to ${OUTPUT_FILE}`);
+  if (chunks.length === 1) {
+    const content = generatePrompt(filesWithDiff, diffStat);
+    fs.writeFileSync(OUTPUT_FILE, content);
+    console.log(`✅ PR review file saved to ${OUTPUT_FILE}`);
+  } else {
+    const ext = path.extname(OUTPUT_FILE);
+    const base = OUTPUT_FILE.slice(0, -ext.length);
+    chunks.forEach((chunk, idx) => {
+      const part = idx + 1;
+      const partFile = `${base}-part${part}${ext}`;
+      const partInfo = {
+        part,
+        total: chunks.length,
+        from: idx * MAX_FILES_PER_CHUNK + 1,
+        to: idx * MAX_FILES_PER_CHUNK + chunk.length,
+        totalFiles: filesWithDiff.length,
+      };
+      const content = generatePrompt(chunk, diffStat, partInfo);
+      fs.writeFileSync(partFile, content);
+      console.log(`✅ Part ${part}/${chunks.length} saved to ${partFile}`);
+    });
+  }
 }
 
 main();
