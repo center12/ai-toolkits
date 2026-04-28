@@ -1,4 +1,4 @@
-# Claude Code Toolkit
+# AI Toolkit
 
 A reusable collection of Claude Code skills, agents, commands, and templates organized by technology stack.
 
