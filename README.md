@@ -15,16 +15,6 @@ Install one or more depending on your project.
 
 ---
 
-## Plugins
-
-Reusable TypeScript utilities — copy directly into your project as needed.
-
-| Plugin | Purpose |
-|--------|---------|
-| [`plugins/logger/`](plugins/logger/) | Leveled logger (`debug`/`log`/`info`/`warn`/`error`) with timestamp prefix and process context (main/render). Controlled via `ENABLE_LOG` env var. |
-
----
-
 ## Install
 
 Run from this repo's root, targeting your project directory.
