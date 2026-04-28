@@ -174,10 +174,3 @@ Output is saved to `output/pr-review.md`. Open that file in Claude Code and run 
 
 ---
 
-## Toolkit Details
-
-- [vite-react/CLAUDE.md](vite-react/CLAUDE.md) — folder structure, naming conventions, key patterns
-- [nestjs/CLAUDE.md](nestjs/CLAUDE.md) — module structure, naming conventions, key patterns
-- [python/CLAUDE.md](python/CLAUDE.md) — module structure, naming conventions, Swagger, key patterns
-- [dotnet/CLAUDE.md](dotnet/CLAUDE.md) — module structure, naming conventions, Swagger, key patterns
-- [plugins/](plugins/) — standalone TypeScript utilities (copy as needed)
