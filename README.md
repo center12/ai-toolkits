@@ -2,28 +2,6 @@
 
 A reusable collection of Claude Code skills, agents, commands, and templates organized by technology stack.
 
-## Toolkits
-
-| Folder | Stack | Use when... |
-|--------|-------|-------------|
-| [`vite-react/`](vite-react/) | Vite + React | Working on a React frontend |
-| [`nestjs/`](nestjs/) | NestJS | Working on a NestJS backend |
-| [`python/`](python/) | Python / FastAPI | Working on a Python backend |
-| [`dotnet/`](dotnet/) | .NET / ASP.NET Core | Working on a .NET backend |
-
-Install one or more depending on your project.
-
----
-
-## Plugins
-
-Reusable TypeScript utilities — copy directly into your project as needed.
-
-| Plugin | Purpose |
-|--------|---------|
-| [`plugins/logger/`](plugins/logger/) | Leveled logger (`debug`/`log`/`info`/`warn`/`error`) with timestamp prefix and process context (main/render). Controlled via `ENABLE_LOG` env var. |
-
----
 
 ## Install
 
